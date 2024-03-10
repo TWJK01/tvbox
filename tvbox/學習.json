@@ -1749,47 +1749,13 @@
 	{"key": "Fangniu4k","name": "🇨🇳放牛┃TV┃App","type": 3,"api": "csp_Fangniu4k","searchable": 1,"changeable": 0,"jar":"https://github.com/TWJK01/tvbox/raw/master/tvbox/jar/zuixinfangniu.jar"},
     {"key": "Iktv","name": "🛰KTV┃音乐┃MV", "type": 3,"api": "csp_Iktv","searchable": 1,"changeable": 0,"jar":"https://github.com/TWJK01/jar1/raw/main/custom_spider.jar"},
   
-	{"key": "爱KTV","name": "爱KTV","type": 3,"api": "csp_XBPQ","jar": "https://github.com/xiaolinshao/linshao/raw/main/ktv.jar","ext": {
-
-
-//"请求头": "手机",//User-Agent$MOBILE_UA  User-Agent$PC_UA
-"分类": "歌手&",
-"分类值": "singer&",
-"分类url": "https://vpsdn.leuse.top/searchmv?table={cateId}&pg={catePg}",
-//"二次截取": "",
-"数组": "[&&]",
-"标题": "name",
-"图片": "'http://txysong.mysoto.cc/singers/'+id+'.jpg'",
-"链接前缀": "https://vpsdn.leuse.top/searchmv?where=singer_names&keywords=",
-"链接后缀": "&size=130",
-"链接": "name",
-//"直接播放": "",
-//"搜索模式": "",
-"搜索url":"https://vpsdn.leuse.top/searchmv?keywords={wd}",
-"搜索数组": "[&&]",
-"搜索图片": "'http://txysong.mysoto.cc/singers/1'+id+'.jpg'",
-"搜索标题": "name",
-"搜索副标题": "",
-"搜索链接": "name",
-"搜索链接前缀": "https://vpsdn.leuse.top/searchmv?keywords=",
-"搜索链接后缀": "&size=130",
-"线路名二次截取": "",
-"线路数组": "",
-"线路标题": "",
-"导演": "cz",
-"主演": "cz",
-"播放二次截取": "[&&]",
-"播放数组": "",
-"播放列表": "{&&}",
-"播放标题": "name\": \"&&\",",
-"播放链接前缀": "http://txysong.mysoto.cc/songs/",
-"播放链接后缀": ".mkv",
-"播放链接": "number\":&&,",
-"免嗅": "1",
-"嗅探词": ".m3u8#mkv"
-
-}
-    },	
+      {
+        "key": "电视直播",
+        "name": "🟢 电视",
+        "type": 3,
+        "api": "https://github.com/xiaolinshao/linshao/raw/main/猫/caiji.js",
+        "ext": "https://tvbox.serv00.net/live.php"
+      },	
   
     {"key":"星星","name":"星视界|海外","type":3,"style":{"type":"rect","ratio":1.485},"api":"csp_Star","searchable":1,"changeable":1,"jar":"https://fongmi.cachefly.net/FongMi/CatVodSpider/main/jar/custom_spider.jar"},
 	{"key": "荐片","name": "荐片","type": 3,"searchable": 1,"quickSearch": 1,"changeable": 1,"playerType": "1","api": "https://agit.ai/fantaiying/fty/raw/branch/master/ext/drpy2.min.js","ext": "https://agit.ai/fantaiying/fty/raw/branch/master/ext/jp.js"},

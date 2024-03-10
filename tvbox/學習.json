@@ -1749,13 +1749,7 @@
 	{"key": "Fangniu4k","name": "🇨🇳放牛┃TV┃App","type": 3,"api": "csp_Fangniu4k","searchable": 1,"changeable": 0,"jar":"https://github.com/TWJK01/tvbox/raw/master/tvbox/jar/zuixinfangniu.jar"},
     {"key": "Iktv","name": "🛰KTV┃音乐┃MV", "type": 3,"api": "csp_Iktv","searchable": 1,"changeable": 0,"jar":"https://github.com/TWJK01/jar1/raw/main/custom_spider.jar"},
   
-      {
-        "key": "电视直播",
-        "name": "🟢 电视",
-        "type": 3,
-        "api": "https://github.com/xiaolinshao/linshao/raw/main/猫/caiji.js",
-        "ext": "https://tvbox.serv00.net/live.php"
-      },	
+    {"key": "电视直播","name": "🟢 电视","type": 3,"api": "https://github.com/xiaolinshao/linshao/raw/main/猫/caiji.js", "ext": "https://tvbox.serv00.net/live.php"},	
   
     {"key":"星星","name":"星视界|海外","type":3,"style":{"type":"rect","ratio":1.485},"api":"csp_Star","searchable":1,"changeable":1,"jar":"https://fongmi.cachefly.net/FongMi/CatVodSpider/main/jar/custom_spider.jar"},
 	{"key": "荐片","name": "荐片","type": 3,"searchable": 1,"quickSearch": 1,"changeable": 1,"playerType": "1","api": "https://agit.ai/fantaiying/fty/raw/branch/master/ext/drpy2.min.js","ext": "https://agit.ai/fantaiying/fty/raw/branch/master/ext/jp.js"},

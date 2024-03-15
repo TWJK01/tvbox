@@ -1147,7 +1147,18 @@
       ]
     },
 
-
+ {
+               "key":"瑞丰",
+               "name":"🔥瑞丰影视┃高清",
+                 "type":3,
+                 "api":"csp_AppYsV2",
+                 "playerType":2,
+                 "searchable":1,
+                 "quickSearch":1,
+                 "filterable":1,
+                 "ext":"http://43.154.162.194/ruifenglb_api.php/v1.vod",
+      "categories":["短剧","连续剧","电影","动漫","少儿频道","综艺"]
+             },
 
 
         {

@@ -1807,7 +1807,7 @@
 	  "logo": "https://epg.112114.xyz/logo/{name}.png"
 	},	
     {
-	  "name":"🌏YR直播1",
+	  "name":"🌏YT直播1",
 	  "type":0,
 	  "url":"https://pastebin.com/raw/cD0vwUT2",
 	  "playerType":1,
@@ -1852,7 +1852,7 @@
      {
 	  "name":"🌏MTV曲库",
 	  "type":0,
-	  "url":"https://gitcode.net/-/ide/project/2301_80661380/zb/edit/master/-/MTV曲库-230052.txt",
+	  "url":"https://gitcode.net/2301_80661380/zb/-/blob/45f705ed910f5261bb9915d32cac1a59bae37246/MTV曲库-230052.txt",
 	  "playerType":1,
 	  "ua": "okhttp/3.15",
 	  "epg":"http://epg.112114.xyz/?ch={name}&date={date}",

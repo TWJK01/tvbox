@@ -1756,7 +1756,7 @@
    	
 	{"key": "drpy_js_网飞","name": "网飞","type": 3,"api": "https://gitee.com/md760323/twjk/raw/master/tvbox/fan/drpy.min.js","searchable": 1,"quickSearch": 1,"filterable": 1,"ext": "https://gitee.com/md760323/twjk/raw/master/tvbox/fan/wangfei.js"},   
 	
-	
+	{"key": "drpy_js_爱奇艺", "name": "┃爱奇艺┃[官网]","type": 3,"api": "https://jxjson.icu/tvbox/drpymin.js","ext": "https://jxjson.icu/tvbox/爱奇艺.js"},
 
     {"key": "csp_xBPQ_女优","name": "🔞女优（翻）","type": 3,"api": "csp_xBPQ","searchable": 1,"quickSearch": 1,"filterable": 0,"ext": "https://github.com/TWJK01/jar1/raw/main/女优.json","jar":"https://github.com/TWJK01/jar1/raw/main/Yoursmile2.jar"},
 	

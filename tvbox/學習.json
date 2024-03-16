@@ -1786,9 +1786,28 @@
     
 	
 
-	
+	{
+      "name":"🌏晴天",
+      "type":0,
+      "url":"https://pastebin.com/raw/YHFcStye",
+      "playerType":1,
+      "ua": "okhttp/3.15",
+      "epg":"http://epg.112114.xyz/?ch={name}&date={date}",
+      "logo": "https://epg.112114.xyz/logo/{name}.png"
+     
+	},
+		 
     {
-	  "name":"🌏直播1",
+	  "name":"🌏ub唐老鴨",
+	  "type":0,
+	  "url":"http://tang.serv00.net/zb/uplivelaoguo",
+	  "playerType":1,
+	  "ua": "okhttp/3.15",
+	  "epg":"http://epg.112114.xyz/?ch={name}&date={date}",
+	  "logo": "https://epg.112114.xyz/logo/{name}.png"
+	},	
+    {
+	  "name":"🌏YR直播1",
 	  "type":0,
 	  "url":"https://pastebin.com/raw/cD0vwUT2",
 	  "playerType":1,
@@ -1829,19 +1848,11 @@
 	  "epg":"http://epg.112114.xyz/?ch={name}&date={date}",
 	  "logo": "https://epg.112114.xyz/logo/{name}.png"
 	 },
+
      {
-      "name":"🌏晴天",
-      "type":0,
-      "url":"https://pastebin.com/raw/YHFcStye",
-      "playerType":1,
-      "ua": "okhttp/3.15",
-      "epg":"http://epg.112114.xyz/?ch={name}&date={date}",
-      "logo": "https://epg.112114.xyz/logo/{name}.png"
-     },
-     {
-	  "name":"🌏焦點唐老鴨",
+	  "name":"🌏MTV曲库",
 	  "type":0,
-	  "url":"https://tang.serv00.net/zb/99",
+	  "url":"https://gitcode.net/-/ide/project/2301_80661380/zb/edit/master/-/MTV曲库-230052.txt",
 	  "playerType":1,
 	  "ua": "okhttp/3.15",
 	  "epg":"http://epg.112114.xyz/?ch={name}&date={date}",
@@ -1857,30 +1868,14 @@
 	  "ua": "okhttp/3.15",
 	  "epg":"http://epg.112114.xyz/?ch={name}&date={date}",
 	  "logo": "https://epg.112114.xyz/logo/{name}.png"
-	 },	 
-	 {
-	  "name":"🌏成人2",
-	  "type":0,
-	  "url":"https://mpimg.cn/down.php/ebb1f919f41a3059855224233850a2e6.txt",
-	  "playerType":1,
-	  "ua": "okhttp/3.15",
-	  "epg":"http://epg.112114.xyz/?ch={name}&date={date}",
-	  "logo": "https://epg.112114.xyz/logo/{name}.png"
-	 }, 
+	 }	 
+
 	
 	
 
 	
 	
-	 {
-	  "name":"🌏ub唐老鴨",
-	  "type":0,
-	  "url":"http://tang.serv00.net/zb/uplivelaoguo",
-	  "playerType":1,
-	  "ua": "okhttp/3.15",
-	  "epg":"http://epg.112114.xyz/?ch={name}&date={date}",
-	  "logo": "https://epg.112114.xyz/logo/{name}.png"
-	 }	 
+ 
 	
 	 
 	       ],

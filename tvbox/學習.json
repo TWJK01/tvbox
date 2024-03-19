@@ -1800,7 +1800,16 @@
      
 	},
 		 
- 	
+ 	{
+      "name":"🌏唐老鴨",
+      "type":0,
+      "url":"https://tang.serv00.net/zb/99?token=23c97600",
+      "playerType":1,
+      "ua": "okhttp/3.15",
+      "epg":"http://epg.112114.xyz/?ch={name}&date={date}",
+      "logo": "https://epg.112114.xyz/logo/{name}.png"
+     
+	},
     {
 	  "name":"🌏YT直播1",
 	  "type":0,

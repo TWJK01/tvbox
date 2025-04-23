@@ -109,7 +109,7 @@ class Spider(Spider):
             uri = home_url + match.group(1)
             a = self.b64encode(uri)
             # h = params['headers']
-            return f"http://127.0.0.1:8964/proxy?do=py&type=ts&url={a}"
+            return f"http://127.0.0.1:8964/proxy?do=py&type=m3u8&pid={a}"
         response = requests.get(url, headers=headers)
         m3u8_text = re.sub(r'(.*\.ts.*)', callback_function, response.text)
         return [200, "application/vnd.apple.mpegurl", m3u8_text]

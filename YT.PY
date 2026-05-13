@@ -1,59 +1,98 @@
 # -*- coding: utf-8 -*-
+import base64
+import sys
 import json
-import re
 import requests
+import yt_dlp
+from base.spider import Spider
 
-# TVBox 爬蟲必須繼承自一個基礎類別或符合特定的類別名稱
-class Spider():
+class Spider(Spider):
     def getName(self):
-        return "YouTube直播抓取"
+        return "MuseFamily"
 
     def init(self, extend):
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-
-    def get_yt_live(self, url):
-        """核心：抓取 YouTube 頻道內部的直播網址"""
+        self.extend = extend
         try:
-            # 請求頻道直播分頁
-            res = requests.get(url + "/streams", headers=self.headers, timeout=5)
-            # 尋找 "style":"LIVE" 的影片 ID
-            if '"style":"LIVE"' in res.text:
-                vid = re.search(r'"videoId":"([^"]+)"', res.text).group(1)
-                return f"https://www.youtube.com/watch?v={vid}"
+            self.extendDict = json.loads(extend)
         except:
-            return None
-        return None
+            self.extendDict = {}
+        pass
+
+    def getDependence(self):
+        return []
 
     def liveContent(self, url):
         """
-        TVBox 直播介面調用的核心函式
-        回傳格式為: 分類名稱,#genre#\n頻道名稱,直播連結
+        TVBox 讀取直播頻道時會呼叫此函式
         """
-        # 定義您要抓取的頻道資訊
-        targets = [
-            {"name": "華視新聞", "url": "https://www.youtube.com/@CtsTw", "genre": "台灣"},
-            {"name": "Muse木棉花-闔家歡", "url": "https://www.youtube.com/@Muse_Family", "genre": "動漫"},
-            {"name": "HOP Sports", "url": "https://www.youtube.com/@HOPSports", "genre": "體育"},
-            {"name": "超級夜總會", "url": "https://www.youtube.com/@SuperNightClubCH29", "genre": "綜藝"}
+        channel_list = ["#EXTM3U"]
+        
+        # 定義要抓取的 YouTube 頻道
+        # 你可以根據需要增加多個頻道
+        target_channels = [
+            {"name": "木棉花家族", "url": "https://www.youtube.com/@Muse_Family/streams"}
         ]
 
-        result = []
-        for item in targets:
-            live_url = self.get_yt_live(item['url'])
-            if live_url:
-                # 按照 TVBox 直播格式構建字串
-                result.append(f"{item['genre']},#genre#")
-                result.append(f"{item['name']},{live_url}")
-        
-        # 返回給 TVBox 的最終純文字內容
-        return "\n".join(result)
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': True, # 快速提取清單
+        }
 
-    # 以下為 TVBox 必要的空函式，避免報錯
-    def homeContent(self, filter): return {}
-    def homeVideoContent(self): return {}
-    def categoryContent(self, tid, pg, filter, extend): return {}
-    def detailContent(self, ids): return {}
-    def searchContent(self, key, quick): return {}
-    def playerContent(self, flag, id, vipFlags): return {}
+        for channel in target_channels:
+            group_name = channel["name"]
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    # 抓取 YouTube 直播分頁
+                    result = ydl.extract_info(channel["url"], download=False)
+                    
+                    if 'entries' in result:
+                        for entry in result['entries']:
+                            # 過濾出「正在直播」的項目
+                            if entry.get('live_status') == 'live':
+                                name = entry.get('title').replace(',', ' ') # 移除名稱中的逗號防止格式錯誤
+                                video_id = entry.get('id')
+                                video_url = f"https://www.youtube.com/watch?v={video_id}"
+                                
+                                # 依照你要求的格式變化：中文名稱,網址
+                                # 在 M3U 中，格式為 #EXTINF...,名稱 \n 網址
+                                m3u_entry = (
+                                    f'#EXTINF:-1 group-title="{group_name}",{name}\n'
+                                    f'{video_url}'
+                                )
+                                channel_list.append(m3u_entry)
+                                
+            except Exception as e:
+                print(f"抓取 {group_name} 失敗: {str(e)}")
+
+        return '\n'.join(channel_list)
+
+    # 以下為 TVBox Spider 必備但在此案例中可留空的函式
+    def homeContent(self, filter):
+        return {}
+
+    def homeVideoContent(self):
+        return {}
+
+    def categoryContent(self, cid, page, filter, ext):
+        return {}
+
+    def detailContent(self, did):
+        return {}
+
+    def searchContent(self, key, quick, page='1'):
+        return {}
+
+    def playerContent(self, flag, pid, vipFlags):
+        # 如果 TVBox 內建解析可以處理 YouTube 連結，這裡回傳空
+        # 如果需要手動解析 m3u8，才需要在這裡調用 yt-dlp 獲取直鏈
+        return {}
+
+    def destroy(self):
+        pass
+
+if __name__ == '__main__':
+    # 測試程式碼
+    spy = Spider()
+    spy.init("")
+    print(spy.liveContent(""))

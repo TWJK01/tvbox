@@ -1,40 +1,105 @@
-from flask import Flask, Response
-import yt_dlp
+from flask import Flask, jsonify
+import requests
+import re
+import json
 
 app = Flask(__name__)
 
-def get_youtube_lives(channel_url):
-    """抓取頻道中所有直播中的網址"""
-    ydl_opts = {
-        'quiet': True,
-        'extract_flat': True,
-    }
-    lines = []
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        try:
-            result = ydl.extract_info(channel_url, download=False)
-            if 'entries' in result:
-                for entry in result['entries']:
-                    if entry.get('live_status') == 'live':
-                        title = entry.get('title').replace(',', ' ') # 避免標題有逗號搞亂格式
-                        url = f"https://www.youtube.com/watch?v={entry.get('id')}"
-                        lines.append(f"{title},{url}")
-        except Exception as e:
-            return [f"錯誤,請檢查網路或IP: {str(e)}"]
-    return lines
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
 
-@app.route('/muse.txt')
-def muse_live_api():
-    # 木棉花直播頁面
-    channel_url = "https://www.youtube.com/@Muse_Family/streams"
-    live_lines = get_youtube_lives(channel_url)
-    
-    # 組合內容
-    content = "\n".join(live_lines)
-    
-    # 返回純文字格式，這是 TVBox 讀取直播源的標準格式
-    return Response(content, mimetype='text/plain')
+# 多頻道
+CHANNELS = {
+    "Muse Family": "https://www.youtube.com/@Muse_Family/streams",
+    "台視新聞": "https://www.youtube.com/@TTV_NEWS/streams",
+    "中視新聞": "https://www.youtube.com/@chinatvnews/streams",
+    "TVBS NEWS": "https://www.youtube.com/@TVBSNEWS01/streams"
+}
 
-if __name__ == '__main__':
-    # 啟動在 5000 端口，外網可訪問請設為 0.0.0.0
-    app.run(host='0.0.0.0', port=5000)
+
+def get_channel_live(channel_name, url):
+
+    result = []
+
+    try:
+
+        html = requests.get(url, headers=headers, timeout=15).text
+
+        match = re.search(
+            r"var ytInitialData = ({.*?});</script>",
+            html
+        )
+
+        if not match:
+            return result
+
+        data = json.loads(match.group(1))
+
+        def find_live(obj):
+
+            if isinstance(obj, dict):
+
+                if "videoRenderer" in obj:
+
+                    vr = obj["videoRenderer"]
+
+                    # 判斷直播中
+                    if "LIVE_NOW" in str(vr):
+
+                        vid = vr.get("videoId")
+
+                        title = ""
+
+                        try:
+                            title = vr["title"]["runs"][0]["text"]
+                        except:
+                            pass
+
+                        if vid:
+
+                            result.append({
+                                "name": f"[{channel_name}] {title}",
+                                "url": f"https://www.youtube.com/watch?v={vid}"
+                            })
+
+                for v in obj.values():
+                    find_live(v)
+
+            elif isinstance(obj, list):
+
+                for item in obj:
+                    find_live(item)
+
+        find_live(data)
+
+    except Exception as e:
+        print(channel_name, e)
+
+    return result
+
+
+@app.route("/live")
+def live():
+
+    merged = []
+    seen = set()
+
+    for name, url in CHANNELS.items():
+
+        lives = get_channel_live(name, url)
+
+        for item in lives:
+
+            if item["url"] not in seen:
+
+                seen.add(item["url"])
+                merged.append(item)
+
+    return jsonify({
+        "list": merged
+    })
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

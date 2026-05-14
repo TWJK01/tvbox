@@ -1,105 +1,67 @@
-from flask import Flask, jsonify
+# coding=utf-8
+
 import requests
 import re
-import json
 
-app = Flask(__name__)
+# YouTube 頻道直播頁
+CHANNEL_URL = "https://www.youtube.com/@Muse_Family/streams"
 
+# Headers
 headers = {
-    "User-Agent": "Mozilla/5.0"
+    "User-Agent": (
+        "Mozilla/5.0 "
+        "(Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/124.0 Safari/537.36"
+    )
 }
 
-# 多頻道
-CHANNELS = {
-    "Muse Family": "https://www.youtube.com/@Muse_Family/streams",
-    "台視新聞": "https://www.youtube.com/@TTV_NEWS/streams",
-    "中視新聞": "https://www.youtube.com/@chinatvnews/streams",
-    "TVBS NEWS": "https://www.youtube.com/@TVBSNEWS01/streams"
-}
+try:
 
+    # 取得頁面
+    response = requests.get(
+        CHANNEL_URL,
+        headers=headers,
+        timeout=15
+    )
 
-def get_channel_live(channel_name, url):
+    html = response.text
 
-    result = []
+    # 抓所有 LIVE_NOW 的 videoId
+    matches = re.findall(
+        r'"videoId":"(.*?)".*?LIVE_NOW',
+        html,
+        re.S
+    )
 
-    try:
-
-        html = requests.get(url, headers=headers, timeout=15).text
-
-        match = re.search(
-            r"var ytInitialData = ({.*?});</script>",
-            html
-        )
-
-        if not match:
-            return result
-
-        data = json.loads(match.group(1))
-
-        def find_live(obj):
-
-            if isinstance(obj, dict):
-
-                if "videoRenderer" in obj:
-
-                    vr = obj["videoRenderer"]
-
-                    # 判斷直播中
-                    if "LIVE_NOW" in str(vr):
-
-                        vid = vr.get("videoId")
-
-                        title = ""
-
-                        try:
-                            title = vr["title"]["runs"][0]["text"]
-                        except:
-                            pass
-
-                        if vid:
-
-                            result.append({
-                                "name": f"[{channel_name}] {title}",
-                                "url": f"https://www.youtube.com/watch?v={vid}"
-                            })
-
-                for v in obj.values():
-                    find_live(v)
-
-            elif isinstance(obj, list):
-
-                for item in obj:
-                    find_live(item)
-
-        find_live(data)
-
-    except Exception as e:
-        print(channel_name, e)
-
-    return result
-
-
-@app.route("/live")
-def live():
-
-    merged = []
+    # 去重
+    video_ids = []
     seen = set()
 
-    for name, url in CHANNELS.items():
+    for vid in matches:
 
-        lives = get_channel_live(name, url)
+        if vid not in seen:
 
-        for item in lives:
+            seen.add(vid)
+            video_ids.append(vid)
 
-            if item["url"] not in seen:
+    # 輸出結果
+    if video_ids:
 
-                seen.add(item["url"])
-                merged.append(item)
+        for vid in video_ids:
 
-    return jsonify({
-        "list": merged
-    })
+            live_url = (
+                "https://www.youtube.com/watch?v="
+                + vid
+            )
 
+            print(live_url)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    else:
+
+        print("目前沒有正在直播")
+
+except Exception as e:
+
+    print("錯誤:", str(e))

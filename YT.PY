@@ -1,34 +1,33 @@
 # coding=utf-8
 
-import requests
+import urllib.request
 import re
+import ssl
 
-# YouTube 頻道直播頁
-CHANNEL_URL = "https://www.youtube.com/@Muse_Family/streams"
+# 忽略 SSL
+ssl._create_default_https_context = (
+    ssl._create_unverified_context
+)
 
-# Headers
+url = "https://www.youtube.com/@Muse_Family/streams"
+
 headers = {
-    "User-Agent": (
-        "Mozilla/5.0 "
-        "(Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 "
-        "(KHTML, like Gecko) "
-        "Chrome/124.0 Safari/537.36"
-    )
+    "User-Agent": "Mozilla/5.0"
 }
+
+req = urllib.request.Request(
+    url,
+    headers=headers
+)
 
 try:
 
-    # 取得頁面
-    response = requests.get(
-        CHANNEL_URL,
-        headers=headers,
+    html = urllib.request.urlopen(
+        req,
         timeout=15
-    )
+    ).read().decode("utf-8")
 
-    html = response.text
-
-    # 抓所有 LIVE_NOW 的 videoId
+    # 抓所有直播 videoId
     matches = re.findall(
         r'"videoId":"(.*?)".*?LIVE_NOW',
         html,
@@ -36,32 +35,21 @@ try:
     )
 
     # 去重
-    video_ids = []
-    seen = set()
+    ids = list(set(matches))
 
-    for vid in matches:
+    if ids:
 
-        if vid not in seen:
+        for vid in ids:
 
-            seen.add(vid)
-            video_ids.append(vid)
-
-    # 輸出結果
-    if video_ids:
-
-        for vid in video_ids:
-
-            live_url = (
+            print(
                 "https://www.youtube.com/watch?v="
                 + vid
             )
 
-            print(live_url)
-
     else:
 
-        print("目前沒有正在直播")
+        print("目前沒有直播")
 
 except Exception as e:
 
-    print("錯誤:", str(e))
+    print("錯誤:", e)

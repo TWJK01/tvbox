@@ -55,7 +55,7 @@ class Spider(S):
         return A
 
     def homeContent(G, filter):
-        # 關鍵修正：homeContent 絕不發送網路請求，確保 100% 成功載入並讓站點在 App 中顯示
+        # 保持零網路請求初始化，保證 100% 成功在 App 中顯示站點
         A_key = 'type_id'
         C_dict = {
             'class': [
@@ -71,7 +71,25 @@ class Spider(S):
         return C_dict
 
     def homeVideoContent(C):
-        return {B: [], E: 0, F: 0}
+        M = {B: [], E: 0, F: 0}
+        try:
+            resp = C.get(C.home_url, headers=C.headers, timeout=10)
+            if resp.status_code == 200:
+                S_doc = H(resp.text.encode())
+                items = S_doc('a:has(img)')
+                seen = set()
+                for item in items.items():
+                    U = item.attr(I)
+                    if not U or U in seen or U in ['/', '#']:
+                        continue
+                    V = item.attr('title') or item('img').attr('alt') or ''
+                    W = item('img').attr(P) or item('img').attr('data-original') or item('img').attr('src') or ''
+                    if U and V and len(V) > 1:
+                        seen.add(U)
+                        M[B].append({J: U, K: V, R: W, L: 'YouTube'})
+        except Exception as e:
+            print(f"homeVideoContent error: {e}")
+        return M
 
     def categoryContent(D, cid, page, filter, ext):
         M = {B: [], E: 0, F: 0}
@@ -80,14 +98,19 @@ class Spider(S):
             resp = C.get(url, headers=D.headers, timeout=10)
             if resp.status_code == 200:
                 S_doc = H(resp.text.encode())
-                T = S_doc('a[href*="/detail/"], a[href*="/vod/"], a[href*="/video/"]')
-                for item in T.items():
+                items = S_doc('a:has(img)')
+                seen = set()
+                for item in items.items():
                     U = item.attr(I)
-                    V = item.attr('title') or item('img').attr('alt')
-                    W = item('img').attr(P) or item('img').attr('src')
-                    X = item(Q).text()
-                    if U and V:
-                        M[B].append({J: U, K: V, R: W, L: X})
+                    if not U or U in seen or U in ['/', '#', '/movie', '/anime', '/drama']:
+                        continue
+                    V = item.attr('title') or item('img').attr('alt') or ''
+                    if not V or len(V) < 2:
+                        V = item('h3, h4, .title, .name').text().strip()
+                    W = item('img').attr(P) or item('img').attr('data-original') or item('img').attr('src') or ''
+                    if U and V and len(V) > 1:
+                        seen.add(U)
+                        M[B].append({J: U, K: V, R: W, L: 'YouTube'})
         except Exception as e:
             print(f"categoryContent error: {e}")
         return M
@@ -105,12 +128,16 @@ class Spider(S):
             pic = Q_doc('meta[property="og:image"]').attr('content') or ''
             desc = Q_doc('meta[property="og:description"]').attr('content') or ''
             
-            X = Q_doc('a[href*="/play/"], a[href*="/watch/"], a[href*="youtube"], a[href*="youtu.be"]')
+            X = Q_doc('a[href*="/play/"], a[href*="/watch/"], a[href*="youtube"], a[href*="youtu.be"], a:has(img)')
             S_list = []
+            seen_ep = set()
             for T in X.items():
-                Z = T.text().strip() or "正片"
                 link = T.attr(I)
-                if link:
+                if not link or link in seen_ep:
+                    continue
+                if '/play/' in link or '/watch/' in link or 'youtube' in link:
+                    seen_ep.add(link)
+                    Z = T.text().strip() or f"正片{len(S_list)+1}"
                     S_list.append(f"{Z}${link}")
             
             play_url = '#'.join(S_list) if S_list else f"播放正片${P}"
@@ -132,14 +159,17 @@ class Spider(S):
             resp = C.get(url, headers=D.headers, timeout=10)
             if resp.status_code == 200:
                 S_doc = H(resp.text.encode())
-                T = S_doc('a[href*="/detail/"], a[href*="/vod/"]')
-                for item in T.items():
+                items = S_doc('a:has(img)')
+                seen = set()
+                for item in items.items():
                     U = item.attr(I)
-                    V = item.attr('title') or item('img').attr('alt')
-                    W = item('img').attr(P) or item('img').attr('src')
-                    X = item(Q).text()
-                    if U and V:
-                        G_dict[B].append({J: U, K: V, R: W, L: X})
+                    if not U or U in seen:
+                        continue
+                    V = item.attr('title') or item('img').attr('alt') or ''
+                    W = item('img').attr(P) or item('img').attr('src') or ''
+                    if U and V and len(V) > 1:
+                        seen.add(U)
+                        G_dict[B].append({J: U, K: V, R: W, L: '搜尋結果'})
         except Exception as e:
             print(f"searchContent error: {e}")
         return G_dict

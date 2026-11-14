@@ -35,13 +35,15 @@ class Spider(S):
         return A.name
 
     def init(A, extend='{}'):
-        A.extend = extend
+        try:
+            A.extend = json.loads(extend) if isinstance(extend, str) else extend
+        except:
+            A.extend = {}
 
     def getDependence(A):
         return []
 
     def isVideoFormat(A, url):
-        # 支援常見直連或 YouTube 網址
         if url and ('youtube.com' in url or 'youtu.be' in url):
             return True
         return any(x in url.lower() for x in ['.m3u8', '.mp4']) if url else False
@@ -53,65 +55,65 @@ class Spider(S):
         return A
 
     def homeContent(G, filter):
-        A = 'type_id'
-        C = {
+        # 關鍵修正：homeContent 絕不發送網路請求，確保 100% 成功載入並讓站點在 App 中顯示
+        A_key = 'type_id'
+        C_dict = {
             'class': [
-                {A: 'movie', D: '电影'},
-                {A: 'anime', D: '动漫'},
-                {A: 'drama', D: '戏剧'}
+                {A_key: 'movie', D: '电影'},
+                {A_key: 'anime', D: '动漫'},
+                {A_key: 'drama', D: '戏剧'}
             ],
             'filters': {},
             B: [],
             E: 0,
             F: 0
         }
-        return C
+        return C_dict
 
     def homeVideoContent(C):
-        A = {B: [], E: 0, F: 0}
-        return A
+        return {B: [], E: 0, F: 0}
 
     def categoryContent(D, cid, page, filter, ext):
         M = {B: [], E: 0, F: 0}
-        N = D.home_url + f"/{cid}?page={page}"
+        url = D.home_url + f"/{cid}?page={page}"
         try:
-            O = C.get(N, headers=D.headers)
-            S = H(O.text.encode())
-            T = S('a[href*="/detail/"], a[href*="/vod/"], a[href*="/video/"]')
-            for A in T.items():
-                U = A.attr(I)
-                V = A.attr('title') or A('img').attr('alt')
-                W = A('img').attr(P) or A('img').attr('src')
-                X = A(Q).text()
-                if U and V:
-                    M[B].append({J: U, K: V, R: W, L: X})
+            resp = C.get(url, headers=D.headers, timeout=10)
+            if resp.status_code == 200:
+                S_doc = H(resp.text.encode())
+                T = S_doc('a[href*="/detail/"], a[href*="/vod/"], a[href*="/video/"]')
+                for item in T.items():
+                    U = item.attr(I)
+                    V = item.attr('title') or item('img').attr('alt')
+                    W = item('img').attr(P) or item('img').attr('src')
+                    X = item(Q).text()
+                    if U and V:
+                        M[B].append({J: U, K: V, R: W, L: X})
         except Exception as e:
-            pass
+            print(f"categoryContent error: {e}")
         return M
 
     def detailContent(N, did):
         U = '$$$'
         O = {B: [], E: 0, F: 0}
         P = did[0]
-        M = N.home_url + (P if P.startswith('http') else f"/{P.lstrip('/')}")
+        M_url = N.home_url + (P if P.startswith('http') else f"/{P.lstrip('/')}")
         
         try:
-            V = C.get(M, headers=N.headers)
-            Q = H(V.text.encode())
-            title = Q('h1').text() or Q('meta[property="og:title"]').attr('content') or "YouTube影視"
-            pic = Q('meta[property="og:image"]').attr('content') or ''
-            desc = Q('meta[property="og:description"]').attr('content') or ''
+            V = C.get(M_url, headers=N.headers, timeout=10)
+            Q_doc = H(V.text.encode())
+            title = Q_doc('h1').text() or Q_doc('meta[property="og:title"]').attr('content') or "YouTube影視"
+            pic = Q_doc('meta[property="og:image"]').attr('content') or ''
+            desc = Q_doc('meta[property="og:description"]').attr('content') or ''
             
-            # 抓取播放集數與連結（相容頁面上的播放按鈕或直接嵌入的 YouTube 鏈結）
-            X = Q('a[href*="/play/"], a[href*="/watch/"], a[href*="youtube"], a[href*="youtu.be"]')
-            S = []
+            X = Q_doc('a[href*="/play/"], a[href*="/watch/"], a[href*="youtube"], a[href*="youtu.be"]')
+            S_list = []
             for T in X.items():
                 Z = T.text().strip() or "正片"
-                M_url = T.attr(I)
-                if M_url:
-                    S.append(f"{Z}${M_url}")
+                link = T.attr(I)
+                if link:
+                    S_list.append(f"{Z}${link}")
             
-            play_url = '#'.join(S) if S else f"播放正片${P}"
+            play_url = '#'.join(S_list) if S_list else f"播放正片${P}"
             
             O[B].append({
                 D: A, J: P, K: title, L: A, 
@@ -119,4 +121,52 @@ class Spider(S):
                 'vod_content': desc, 'vod_play_from': 'YOKAR-YT', 'vod_play_url': play_url
             })
         except Exception as e:
-            O[B].append({D: A, J: P, K: '解析錯誤', L: A, 'vod_play_from': 'error
+            O[B].append({D: A, J: P, K: '解析錯誤', L: A, 'vod_play_from': 'error', 'vod_play_url': '播放$#'})
+            
+        return O
+
+    def searchContent(D, key, quick, page='1'):
+        G_dict = {B: [], E: 0, F: 0}
+        url = D.home_url + f"/search?wd={key}&page={page}"
+        try:
+            resp = C.get(url, headers=D.headers, timeout=10)
+            if resp.status_code == 200:
+                S_doc = H(resp.text.encode())
+                T = S_doc('a[href*="/detail/"], a[href*="/vod/"]')
+                for item in T.items():
+                    U = item.attr(I)
+                    V = item.attr('title') or item('img').attr('alt')
+                    W = item('img').attr(P) or item('img').attr('src')
+                    X = item(Q).text()
+                    if U and V:
+                        G_dict[B].append({J: U, K: V, R: W, L: X})
+        except Exception as e:
+            print(f"searchContent error: {e}")
+        return G_dict
+
+    def playerContent(B, flag, pid, vipFlags):
+        play_url = pid if pid.startswith('http') else B.home_url + (pid if pid.startswith('/') else f"/{pid}")
+        try:
+            resp = C.get(play_url, headers=B.headers, timeout=10)
+            if resp.status_code == 200:
+                yt_match = re.search(r'["\'](https?://(?:www\.)?(?:youtube\.com/embed/|youtube\.com/watch\?v=|youtu\.be/)[^"\']+)["\']', resp.text)
+                if yt_match:
+                    play_url = yt_match.group(1).replace('\\/', '/')
+        except Exception:
+            pass
+
+        return {
+            'url': play_url,
+            'parse': 1,  # 啟動網頁嗅探載入 YouTube 框架
+            'jx': 0,
+            'header': {'User-Agent': B.headers['User-Agent'], 'Referer': B.home_url + '/'}
+        }
+
+    def localProxy(A, params):
+        return 0
+
+    def destroy(A):
+        return '正在Destroy'
+
+if __name__ == '__main__':
+    pass

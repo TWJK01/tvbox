@@ -18,12 +18,9 @@ class Spider(Spider):
         return []
 
     def _get_html(self, url, params=None):
-        """
-        統一發送 GET 請求並回傳 lxml 解析樹，遵循最新 self.net.req 規範
-        """
         options = {
             "headers": self.headers,
-            "timeout": 5000  # 單位為毫秒[cite: 1]
+            "timeout": 8000
         }
         if params:
             options["params"] = params
@@ -39,35 +36,50 @@ class Spider(Spider):
             return None
         return etree.HTML(content)
 
+    def _clean_text(self, text):
+        if not text:
+            return ""
+        pattern = re.compile('[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]')
+        return pattern.sub("", text).strip()
+
     def _parse_vod_list(self, root):
-        """
-        解析列表頁或推薦頁的影片卡片
-        """
         vod_list = []
         if root is None:
             return vod_list
 
-        items = root.xpath('//a[contains(@href, "/detail/") or contains(@href, "/vod/") or contains(@href, "/video/")]')
+        items = root.xpath(
+            '//a[contains(@href, "/detail/") or contains(@href, "/vod/") or '
+            'contains(@href, "/video/") or contains(@href, "/movie/") or '
+            'contains(@href, "/anime/") or contains(@href, "/drama/")]'
+        )
         seen_ids = set()
 
         for item in items:
-            href = item.xpath('./@href')
-            if not href:
+            href_list = item.xpath('./@href')
+            if not href_list:
                 continue
-            vod_id = href[0].strip()
-            if vod_id in seen_ids:
+            vod_id = href_list[0].strip()
+
+            if vod_id in seen_ids or vod_id in ["/", "/movie", "/anime", "/drama", "#"]:
                 continue
 
-            title_nodes = item.xpath('.//@title | .//h3/text() | .//h4/text() | .//div[contains(@class, "title")]/text() | ./text()')
-            title = "".join(t.strip() for t in title_nodes if t.strip())
-            if not title:
+            title_nodes = item.xpath(
+                './/@title | .//img/@alt | .//h3/text() | .//h4/text() | '
+                './/div[contains(@class, "title") or contains(@class, "name")]/text() | ./text()'
+            )
+            raw_title = "".join(t.strip() for t in title_nodes if t.strip())
+            title = self._clean_text(raw_title)
+            if not title or len(title) < 2:
                 continue
 
-            pic_nodes = item.xpath('.//img/@data-src | .//img/@data-original | .//img/@src')
+            pic_nodes = item.xpath('.//img/@data-src | .//img/@data-original | .//img/@data-echo | .//img/@src')
             pic = urljoin(self.base_url, pic_nodes[0].strip()) if pic_nodes else ""
 
-            remark_nodes = item.xpath('.//span[contains(@class, "tag") or contains(@class, "remarks") or contains(@class, "note")]/text()')
-            remark = remark_nodes[0].strip() if remark_nodes else ""
+            remark_nodes = item.xpath(
+                './/span[contains(@class, "tag") or contains(@class, "remarks") or '
+                'contains(@class, "note") or contains(@class, "state")]/text()'
+            )
+            remark = self._clean_text(remark_nodes[0]) if remark_nodes else ""
 
             seen_ids.add(vod_id)
             vod_list.append({
@@ -80,23 +92,17 @@ class Spider(Spider):
         return vod_list
 
     def homeContent(self, filter):
-        """
-        首頁分類與推薦內容（依據網站截圖：電影、動漫、戲劇）[cite: 2]
-        """
         classes = [
             {"type_id": "movie", "type_name": "電影"},
             {"type_id": "anime", "type_name": "動漫"},
             {"type_id": "drama", "type_name": "戲劇"}
         ]
-
         vod_list = []
         try:
             root = self._get_html(self.base_url)
             vod_list = self._parse_vod_list(root)
         except Exception as e:
-            print(f"homeContent error: {e}")
-
-        # 直接回傳 dict，不使用 json.dumps[cite: 1]
+            print(f"[YOKAR] homeContent error: {e}")
         return {
             "class": classes,
             "list": vod_list
@@ -106,17 +112,13 @@ class Spider(Spider):
         return {"list": []}
 
     def categoryContent(self, tid, pg, filter, extend):
-        """
-        分類列表與分頁
-        """
         vod_list = []
         try:
             url = f"{self.base_url}/{tid}"
             root = self._get_html(url, params={"page": pg})
             vod_list = self._parse_vod_list(root)
         except Exception as e:
-            print(f"categoryContent error: {e}")
-
+            print(f"[YOKAR] categoryContent error: {e}")
         return {
             "list": vod_list,
             "page": int(pg),
@@ -126,9 +128,6 @@ class Spider(Spider):
         }
 
     def detailContent(self, ids):
-        """
-        影片詳情頁
-        """
         vod_id = ids[0]
         detail_url = urljoin(self.base_url, vod_id)
 
@@ -137,25 +136,33 @@ class Spider(Spider):
             if root is None:
                 return {"list": []}
 
-            title_node = root.xpath('//h1/text() | //h2[contains(@class, "title")]/text()')
-            title = title_node[0].strip() if title_node else "未知片名"
+            title_node = root.xpath('//h1/text() | //h2[contains(@class, "title")]/text() | //meta[@property="og:title"]/@content')
+            title = self._clean_text(title_node[0]) if title_node else "未知影片"
 
             pic_node = root.xpath('//div[contains(@class, "poster") or contains(@class, "thumb")]//img/@src | //meta[@property="og:image"]/@content')
             pic = urljoin(self.base_url, pic_node[0].strip()) if pic_node else ""
 
-            desc_node = root.xpath('//div[contains(@class, "desc") or contains(@class, "content") or contains(@class, "intro")]//text()')
-            desc = "".join(t.strip() for t in desc_node if t.strip())
+            desc_node = root.xpath('//div[contains(@class, "desc") or contains(@class, "content") or contains(@class, "intro")]//text() | //meta[@property="og:description"]/@content')
+            desc = self._clean_text("".join(t.strip() for t in desc_node if t.strip()))
 
-            ep_nodes = root.xpath('//a[contains(@href, "/play/") or contains(@href, "/watch/")]')
+            # 抓取播放集數與連結（若包含 youtube 網址或播放頁面）
+            ep_nodes = root.xpath('//a[contains(@href, "/play/") or contains(@href, "/watch/") or contains(@href, "youtube") or contains(@href, "youtu.be")]')
             episodes = []
+            seen_eps = set()
             for ep in ep_nodes:
-                ep_name_list = ep.xpath('.//text()')
-                ep_name = "".join(t.strip() for t in ep_name_list if t.strip()) or "正片"
-                ep_href = ep.xpath('./@href')
-                if ep_href:
-                    episodes.append(f"{ep_name}${ep_href[0].strip()}")
+                ep_href_list = ep.xpath('./@href')
+                if not ep_href_list:
+                    continue
+                ep_href = ep_href_list[0].strip()
+                if ep_href in seen_eps:
+                    continue
 
-            play_from = "YOKAR線路"
+                ep_name_list = ep.xpath('.//text()')
+                ep_name = self._clean_text("".join(t.strip() for t in ep_name_list if t.strip())) or "正片"
+                seen_eps.add(ep_href)
+                episodes.append(f"{ep_name}${ep_href}")
+
+            play_from = "YouTube播放源"
             play_url = "#".join(episodes) if episodes else f"立即播放${vod_id}"
 
             vod = {
@@ -169,53 +176,40 @@ class Spider(Spider):
             return {"list": [vod]}
 
         except Exception as e:
-            print(f"detailContent error: {e}")
+            print(f"[YOKAR] detailContent error: {e}")
             return {"list": []}
 
     def searchContent(self, key, quick, pg="1"):
-        """
-        關鍵字搜尋
-        """
         vod_list = []
         try:
             search_url = f"{self.base_url}/search"
             root = self._get_html(search_url, params={"wd": key, "q": key, "page": pg})
             vod_list = self._parse_vod_list(root)
         except Exception as e:
-            print(f"searchContent error: {e}")
-
+            print(f"[YOKAR] searchContent error: {e}")
         return {"list": vod_list}
 
     def playerContent(self, flag, id, vipFlags):
         """
-        解析播放地址
+        針對 YouTube 來源，直接將網址或播放頁面交由 App 嗅探與解析 (parse: 1)
         """
-        play_page_url = urljoin(self.base_url, id)
+        play_url = id if id.startswith("http") else urljoin(self.base_url, id)
+        
+        # 如果頁面中藏有直接的 YouTube 連結，也可嘗試先請求抓取
         try:
-            response = self.net.req(play_page_url, {
-                "headers": self.headers,
-                "timeout": 5000
-            })
-            if response.get("error") or not 200 <= response["code"] < 300:
-                return {"parse": 1, "playUrl": "", "url": play_page_url, "header": self.headers}
-
-            html_text = response.get("content", "")
-            # 使用標準庫 re 搜尋直链[cite: 1]
-            match = re.search(r'["\'](https?://[^"\']+\.(?:m3u8|mp4)[^"\']*)["\']', html_text)
-            if match:
-                stream_url = match.group(1).replace("\\/", "/")
-                return {
-                    "parse": 0,
-                    "playUrl": "",
-                    "url": stream_url,
-                    "header": self.headers
-                }
+            response = self.net.req(play_url, {"headers": self.headers, "timeout": 8000})
+            if not response.get("error") and 200 <= response["code"] < 300:
+                html_text = response.get("content", "")
+                # 尋找頁面中的 youtube 連結
+                yt_match = re.search(r'["\'](https?://(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)[^"\']+)["\']', html_text)
+                if yt_match:
+                    play_url = yt_match.group(1).replace("\\/", "/")
         except Exception as e:
-            print(f"playerContent error: {e}")
+            print(f"[YOKAR] playerContent yt search error: {e}")
 
         return {
-            "parse": 1,
+            "parse": 1,  # 啟用 App 內建嗅探/解析來播放 YouTube
             "playUrl": "",
-            "url": play_page_url,
+            "url": play_url,
             "header": self.headers
         }

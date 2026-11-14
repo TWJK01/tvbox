@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 R = 'vod_pic'
-Q = 'span.public-list-prb.hide.ft2'  # 可依 youkar.net 實際標籤微調
+Q = 'span.public-list-prb.hide.ft2'
 P = 'data-src'
 O = print
 L = 'vod_remarks'
@@ -41,6 +41,9 @@ class Spider(S):
         return []
 
     def isVideoFormat(A, url):
+        # 支援常見直連或 YouTube 網址
+        if url and ('youtube.com' in url or 'youtu.be' in url):
+            return True
         return any(x in url.lower() for x in ['.m3u8', '.mp4']) if url else False
 
     def manualVideoCheck(A):
@@ -50,7 +53,6 @@ class Spider(S):
         return A
 
     def homeContent(G, filter):
-        # 依據 yokar.net 截圖中的三大分類：電影、動漫、戲劇
         A = 'type_id'
         C = {
             'class': [
@@ -66,24 +68,25 @@ class Spider(S):
         return C
 
     def homeVideoContent(C):
-        # 首頁推薦可直接留空或回傳列表
         A = {B: [], E: 0, F: 0}
         return A
 
     def categoryContent(D, cid, page, filter, ext):
         M = {B: [], E: 0, F: 0}
         N = D.home_url + f"/{cid}?page={page}"
-        O = C.get(N, headers=D.headers)
-        S = H(O.text.encode())
-        # 抓取影片卡片清單（對應常見 AppleCMS / 響應式模板結構）
-        T = S('a[href*="/detail/"], a[href*="/vod/"], a[href*="/video/"]')
-        for A in T.items():
-            U = A.attr(I)
-            V = A.attr('title') or A('img').attr('alt')
-            W = A('img').attr(P) or A('img').attr('src')
-            X = A(Q).text()
-            if U and V:
-                M[B].append({J: U, K: V, R: W, L: X})
+        try:
+            O = C.get(N, headers=D.headers)
+            S = H(O.text.encode())
+            T = S('a[href*="/detail/"], a[href*="/vod/"], a[href*="/video/"]')
+            for A in T.items():
+                U = A.attr(I)
+                V = A.attr('title') or A('img').attr('alt')
+                W = A('img').attr(P) or A('img').attr('src')
+                X = A(Q).text()
+                if U and V:
+                    M[B].append({J: U, K: V, R: W, L: X})
+        except Exception as e:
+            pass
         return M
 
     def detailContent(N, did):
@@ -95,12 +98,12 @@ class Spider(S):
         try:
             V = C.get(M, headers=N.headers)
             Q = H(V.text.encode())
-            title = Q('h1').text() or Q('meta[property="og:title"]').attr('content')
-            pic = Q('meta[property="og:image"]').attr('content')
-            desc = Q('meta[property="og:description"]').attr('content')
+            title = Q('h1').text() or Q('meta[property="og:title"]').attr('content') or "YouTube影視"
+            pic = Q('meta[property="og:image"]').attr('content') or ''
+            desc = Q('meta[property="og:description"]').attr('content') or ''
             
-            # 抓取播放集數清單
-            X = Q('a[href*="/play/"], a[href*="/watch/"], a[href*="youtube"]')
+            # 抓取播放集數與連結（相容頁面上的播放按鈕或直接嵌入的 YouTube 鏈結）
+            X = Q('a[href*="/play/"], a[href*="/watch/"], a[href*="youtube"], a[href*="youtu.be"]')
             S = []
             for T in X.items():
                 Z = T.text().strip() or "正片"
@@ -116,28 +119,4 @@ class Spider(S):
                 'vod_content': desc, 'vod_play_from': 'YOKAR-YT', 'vod_play_url': play_url
             })
         except Exception as e:
-            O[B].append({D: A, J: P, K: '解析錯誤', L: A, 'vod_play_from': 'error', 'vod_play_url': '播放$#'})
-            
-        return O
-
-    def searchContent(D, key, quick, page='1'):
-        G = {B: [], E: 0, F: 0}
-        N = D.home_url + f"/search?wd={key}&page={page}"
-        try:
-            O = C.get(N, headers=D.headers)
-            S = H(O.text.encode())
-            T = S('a[href*="/detail/"], a[href*="/vod/"]')
-            for A in T.items():
-                U = A.attr(I)
-                V = A.attr('title') or A('img').attr('alt')
-                W = A('img').attr(P) or A('img').attr('src')
-                X = A(Q).text()
-                if U and V:
-                    G[B].append({J: U, K: V, R: W, L: X})
-        except Exception as e:
-            pass
-        return G
-
-    def playerContent(B, flag, pid, vipFlags):
-        # 因為是 YouTube 來源，設定 parse: 1 交由 App 內建嗅探播放
-        play_url = pid if pid.startswith('http') else B.home_url + (pid if pid.startswith('/') else f"
+            O[B].append({D: A, J: P, K: '解析錯誤', L: A, 'vod_play_from': 'error
